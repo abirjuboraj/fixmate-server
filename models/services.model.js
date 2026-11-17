@@ -1,21 +1,21 @@
-import { ObjectId } from 'mongodb';
-import { getDB } from '../config/db.js';
+import { ObjectId } from "mongodb";
+import { getDB } from "../config/db.js";
 
 // FixMate service enums (from the requirement data design)
 export const SERVICE_CATEGORIES = [
-  'Smartphone',
-  'Laptop & PC',
-  'AC',
-  'Refrigerator',
-  'TV',
-  'Washing Machine',
-  'Electrical'
+  "Smartphone",
+  "Laptop & PC",
+  "AC",
+  "Refrigerator",
+  "TV",
+  "Washing Machine",
+  "Electrical",
 ];
 
-export const SERVICE_MODES = ['Home Visit', 'Shop Drop-off'];
+export const SERVICE_MODES = ["Home Visit", "Shop Drop-off"];
 
 const servicesCollection = () => {
-  return getDB().collection('services');
+  return getDB().collection("services");
 };
 
 /**
@@ -36,7 +36,7 @@ const toObjectId = (serviceId) => {
  * characters (e.g. "(", "+") cannot break the query.
  */
 const escapeRegex = (text) => {
-  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
 /**
@@ -54,10 +54,10 @@ const buildServiceDocument = (payload, technician) => {
     ...payload,
     technicianName: technician.name,
     technicianEmail: technician.email,
-    approvalStatus: 'pending',
+    approvalStatus: "pending",
     isAvailable: true,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
   };
 };
 
@@ -73,7 +73,7 @@ export const insertService = async (payload, technician) => {
 
   return {
     _id: result.insertedId,
-    ...doc
+    ...doc,
   };
 };
 
@@ -88,11 +88,11 @@ export const findPublicServices = async ({
   category,
   serviceMode,
   sort,
-  limit
+  limit,
 } = {}) => {
   const filter = {
-    approvalStatus: 'approved',
-    isAvailable: true
+    approvalStatus: "approved",
+    isAvailable: true,
   };
 
   if (category) {
@@ -104,20 +104,22 @@ export const findPublicServices = async ({
   }
 
   if (search) {
-    const rx = { $regex: escapeRegex(search), $options: 'i' };
+    const rx = { $regex: escapeRegex(search), $options: "i" };
     filter.$or = [{ title: rx }, { category: rx }];
   }
 
   const sortAliases = {
-    'price-asc': { basePrice: 1 },
-    'price-desc': { basePrice: -1 },
-    'low-to-high': { basePrice: 1 },
-    'high-to-low': { basePrice: -1 },
+    "price-asc": { basePrice: 1 },
+    "price-desc": { basePrice: -1 },
+    "low-to-high": { basePrice: 1 },
+    "high-to-low": { basePrice: -1 },
     newest: { createdAt: -1 },
-    latest: { createdAt: -1 }
+    latest: { createdAt: -1 },
   };
 
-  const sortStage = sortAliases[String(sort).toLowerCase()] || { createdAt: -1 };
+  const sortStage = sortAliases[String(sort).toLowerCase()] || {
+    createdAt: -1,
+  };
 
   let query = servicesCollection().find(filter).sort(sortStage);
 
@@ -176,11 +178,31 @@ export const updateServiceById = async (serviceId, updates, ownerEmail) => {
     {
       $set: {
         ...updates,
-        approvalStatus: 'pending',
-        updatedAt: new Date()
-      }
+        approvalStatus: "pending",
+        updatedAt: new Date(),
+      },
     },
-    { returnDocument: 'after' }
+    { returnDocument: "after" },
+  );
+};
+
+// update toggle availability
+
+export const updateAvailabilityById = async (
+  serviceId,
+  isAvailable,
+  ownerEmail,
+) => {
+  const objectId = toObjectId(serviceId);
+
+  if (!objectId) return null;
+
+  return await servicesCollection().findOneAndUpdate(
+    { _id: objectId, technicianEmail: ownerEmail },
+    {
+      $set: { isAvailable, updatedAt: new Date() },
+    },
+    { returnDocument: "after" },
   );
 };
 
@@ -199,7 +221,7 @@ export const deleteServiceById = async (serviceId, ownerEmail) => {
 
   const result = await servicesCollection().deleteOne({
     _id: objectId,
-    technicianEmail: ownerEmail
+    technicianEmail: ownerEmail,
   });
 
   return result.deletedCount > 0;

@@ -7,6 +7,7 @@ import {
   getSingleService,
   updateService,
   deleteService,
+  toggleAvailability,
 } from "../controllers/services.controller.js";
 import {
   verifyToken,
@@ -23,6 +24,7 @@ router.post("/", verifyToken, verifyTechnician, addService);
 router.get("/own", verifyToken, verifyTechnician, getMyServices);
 
 router.patch("/:id", verifyToken, verifyTechnician, updateService);
+router.patch("/:id/availability", verifyToken, verifyTechnician, toggleAvailability);
 router.delete("/:id", verifyToken, verifyTechnician, deleteService);
 
 router.get("/:id", optionalAuth, getSingleService);

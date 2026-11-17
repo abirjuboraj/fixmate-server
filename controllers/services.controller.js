@@ -6,6 +6,7 @@ import {
   findServicesByTechnician,
   findServiceById,
   updateServiceById,
+  updateAvailabilityById,
   deleteServiceById
 } from '../models/services.model.js';
 
@@ -149,6 +150,34 @@ export const updateService = asyncHandler(async (req, res) => {
     data: updated
   });
 });
+
+// toggle service availability
+
+export const toggleAvailability = asyncHandler(async (req, res) => {
+  const technician = requireTechnicianIdentity(req);
+
+  const {id} = req.params;
+
+  const {isAvailable} = req.body;
+
+  if (typeof isAvailable !== 'boolean') {
+    throw new ApiError(400, 'isAvailable must be true or false.');
+  }
+
+  const updated = await updateAvailabilityById( id, isAvailable, technician.email);
+
+   if (!updated) {
+    throw new ApiError(404, 'Service not found.');
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: `Service is now ${isAvailable ? 'available' : 'hidden'}.`,
+    data: updated
+  });
+
+
+})
 
 /**
  * Controller to delete a service (owner technician only).
