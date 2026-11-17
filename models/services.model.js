@@ -131,7 +131,6 @@ export const findPublicServices = async ({
 };
 
 /**
- * All services owned by a technician (for the My Services dashboard), newest first.
  * @param {string} technicianEmail
  * @returns {Promise<Array<object>>}
  */

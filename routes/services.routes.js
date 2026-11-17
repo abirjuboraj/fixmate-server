@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 
 import {
   addService,
@@ -6,22 +6,25 @@ import {
   getMyServices,
   getSingleService,
   updateService,
-  deleteService
-} from '../controllers/services.controller.js';
-import { verifyToken, verifyTechnician, optionalAuth } from '../middlewares/auth.middleware.js';
+  deleteService,
+} from "../controllers/services.controller.js";
+import {
+  verifyToken,
+  verifyTechnician,
+  optionalAuth,
+} from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.get('/', getAllServices);
+router.get("/", getAllServices);
 
+router.post("/", verifyToken, verifyTechnician, addService);
 
-router.post('/', verifyToken, verifyTechnician, addService);
+router.get("/own", verifyToken, verifyTechnician, getMyServices);
 
-router.get('/mine', verifyToken, verifyTechnician, getMyServices);
+router.patch("/:id", verifyToken, verifyTechnician, updateService);
+router.delete("/:id", verifyToken, verifyTechnician, deleteService);
 
-router.patch('/:id', verifyToken, verifyTechnician, updateService);
-router.delete('/:id', verifyToken, verifyTechnician, deleteService);
-
-router.get('/:id', optionalAuth, getSingleService);
+router.get("/:id", optionalAuth, getSingleService);
 
 export default router;
