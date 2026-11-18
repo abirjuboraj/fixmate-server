@@ -1,5 +1,5 @@
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiError from '../utils/ApiError.js';
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiError from "../utils/ApiError.js";
 import {
   insertService,
   findPublicServices,
@@ -9,9 +9,9 @@ import {
   updateAvailabilityById,
   deleteServiceById,
   findAllServicesForAdmin,
-  updateServiceStatusByAdmin
-} from '../models/services.model.js';
-import { ObjectId } from 'mongodb';
+  updateServiceStatusByAdmin,
+} from "../models/services.model.js";
+import { ObjectId } from "mongodb";
 
 /**
  *
@@ -20,37 +20,37 @@ import { ObjectId } from 'mongodb';
  */
 const requireTechnicianIdentity = (req) => {
   if (!req.user || !req.user.email) {
-    throw new ApiError(401, 'Unauthorized');
+    throw new ApiError(401, "Unauthorized");
   }
 
-  return { name: req.user.name || 'Technician', email: req.user.email };
+  return { name: req.user.name || "Technician", email: req.user.email };
 };
 const requireAdminIdentity = (req) => {
   if (!req.user || !req.user.email) {
-    throw new ApiError(401, 'Unauthorized');
+    throw new ApiError(401, "Unauthorized");
   }
 
-  return { name: req.user.name || 'Admin', email: req.user.email };
+  return { name: req.user.name || "Admin", email: req.user.email };
 };
-
 
 const pickEditableFields = (body = {}) => {
   const fields = {};
 
   if (body.title !== undefined) fields.title = String(body.title).trim();
   if (body.category !== undefined) fields.category = body.category;
-  if (body.description !== undefined) fields.description = String(body.description).trim();
+  if (body.description !== undefined)
+    fields.description = String(body.description).trim();
   if (body.image !== undefined) fields.image = String(body.image).trim();
   if (body.basePrice !== undefined) fields.basePrice = Number(body.basePrice);
   if (body.estimatedDuration !== undefined) {
     fields.estimatedDuration = String(body.estimatedDuration).trim();
   }
   if (body.serviceMode !== undefined) fields.serviceMode = body.serviceMode;
-  if (body.serviceArea !== undefined) fields.serviceArea = String(body.serviceArea).trim();
+  if (body.serviceArea !== undefined)
+    fields.serviceArea = String(body.serviceArea).trim();
 
   return fields;
 };
-
 
 export const addService = asyncHandler(async (req, res) => {
   const technician = requireTechnicianIdentity(req);
@@ -60,8 +60,8 @@ export const addService = asyncHandler(async (req, res) => {
 
   return res.status(201).json({
     success: true,
-    message: 'Service created. It is pending admin approval.',
-    data: service
+    message: "Service created. It is pending admin approval.",
+    data: service,
   });
 });
 
@@ -79,13 +79,13 @@ export const getAllServices = asyncHandler(async (req, res) => {
     category,
     serviceMode,
     sort,
-    limit
+    limit,
   });
 
   return res.status(200).json({
     success: true,
-    message: 'Services fetched successfully',
-    data: services
+    message: "Services fetched successfully",
+    data: services,
   });
 });
 
@@ -97,31 +97,30 @@ export const getAllServicesForAdmin = asyncHandler(async (req, res) => {
   const { status } = req.query;
 
   const services = await findAllServicesForAdmin(
-    status ? String(status) : undefined
+    status ? String(status) : undefined,
   );
 
   return res.status(200).json({
     success: true,
-    message: 'All services fetched successfully',
-    data: services
+    message: "All services fetched successfully",
+    data: services,
   });
 });
 
 // service status update (admin only)
-export const updateServiceApproval = asyncHandler(async(req, res) => {
-  
-  const {id} = req.params;
+export const updateServiceApproval = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
   const approvalStatus = req.body.approvalStatus;
 
   const updated = await updateServiceStatusByAdmin(id, approvalStatus);
 
-   return res.status(200).json({
+  return res.status(200).json({
     success: true,
     message: `Service status updated to ${approvalStatus} successfully`,
-    data: updated
+    data: updated,
   });
-})
+});
 
 // technicians only
 export const getMyServices = asyncHandler(async (req, res) => {
@@ -131,8 +130,8 @@ export const getMyServices = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: 'Your services fetched successfully',
-    data: services
+    message: "Your services fetched successfully",
+    data: services,
   });
 });
 
@@ -145,22 +144,18 @@ export const getSingleService = asyncHandler(async (req, res) => {
 
   const service = await findServiceById(id);
 
-  if (!service) {
-    throw new ApiError(404, 'Service not found.');
-  }
-
-  const isOwner = Boolean(req.user?.email) && service.technicianEmail === req.user.email;
-  const isPubliclyVisible =
-    service.approvalStatus === 'approved' && service.isAvailable === true;
-
-  if (!isPubliclyVisible && !isOwner) {
-    throw new ApiError(404, 'Service not found.');
+  if (
+    !service ||
+    service.approvalStatus !== "approved" ||
+    service.isAvailable !== true
+  ) {
+    throw new ApiError(404, "Service not found.");
   }
 
   return res.status(200).json({
     success: true,
-    message: 'Service fetched successfully',
-    data: service
+    message: "Service fetched successfully",
+    data: service,
   });
 });
 
@@ -172,11 +167,14 @@ export const updateService = asyncHandler(async (req, res) => {
   const existing = await findServiceById(id);
 
   if (!existing) {
-    throw new ApiError(404, 'Service not found.');
+    throw new ApiError(404, "Service not found.");
   }
 
   if (existing.technicianEmail !== technician.email) {
-    throw new ApiError(403, 'Forbidden: You can only update your own services.');
+    throw new ApiError(
+      403,
+      "Forbidden: You can only update your own services.",
+    );
   }
 
   const updates = pickEditableFields(req.body);
@@ -184,8 +182,8 @@ export const updateService = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: 'Service updated. It is pending admin re-approval.',
-    data: updated
+    message: "Service updated. It is pending admin re-approval.",
+    data: updated,
   });
 });
 
@@ -194,28 +192,30 @@ export const updateService = asyncHandler(async (req, res) => {
 export const toggleAvailability = asyncHandler(async (req, res) => {
   const technician = requireTechnicianIdentity(req);
 
-  const {id} = req.params;
+  const { id } = req.params;
 
-  const {isAvailable} = req.body;
+  const { isAvailable } = req.body;
 
-  if (typeof isAvailable !== 'boolean') {
-    throw new ApiError(400, 'isAvailable must be true or false.');
+  if (typeof isAvailable !== "boolean") {
+    throw new ApiError(400, "isAvailable must be true or false.");
   }
 
-  const updated = await updateAvailabilityById( id, isAvailable, technician.email);
+  const updated = await updateAvailabilityById(
+    id,
+    isAvailable,
+    technician.email,
+  );
 
-   if (!updated) {
-    throw new ApiError(404, 'Service not found.');
+  if (!updated) {
+    throw new ApiError(404, "Service not found.");
   }
 
   return res.status(200).json({
     success: true,
-    message: `Service is now ${isAvailable ? 'available' : 'hidden'}.`,
-    data: updated
+    message: `Service is now ${isAvailable ? "available" : "hidden"}.`,
+    data: updated,
   });
-
-
-})
+});
 
 /**
  * Controller to delete a service (owner technician only).
@@ -227,19 +227,22 @@ export const deleteService = asyncHandler(async (req, res) => {
   const existing = await findServiceById(id);
 
   if (!existing) {
-    throw new ApiError(404, 'Service not found.');
+    throw new ApiError(404, "Service not found.");
   }
 
   if (existing.technicianEmail !== technician.email) {
-    throw new ApiError(403, 'Forbidden: You can only delete your own services.');
+    throw new ApiError(
+      403,
+      "Forbidden: You can only delete your own services.",
+    );
   }
 
   const deleted = await deleteServiceById(id, technician.email);
 
   return res.status(200).json({
     success: true,
-    message: 'Service deleted successfully',
-    data: { deleted }
+    message: "Service deleted successfully",
+    data: { deleted },
   });
 });
 
@@ -249,5 +252,5 @@ export default {
   getMyServices,
   getSingleService,
   updateService,
-  deleteService
+  deleteService,
 };
