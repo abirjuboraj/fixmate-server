@@ -107,6 +107,7 @@ export const getAllServicesForAdmin = asyncHandler(async (req, res) => {
   });
 });
 
+// service status update (admin only)
 export const updateServiceApproval = asyncHandler(async(req, res) => {
   
   const {id} = req.params;
