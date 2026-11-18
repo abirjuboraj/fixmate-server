@@ -2,16 +2,23 @@ import { MongoClient } from 'mongodb';
 
 let client = null;
 let db = null;
+let connectionPromise = null;
 
 /**
  * Connects to the MongoDB database using the official MongoDB Native Driver.
- * Ensures a single shared client and database instance across the application lifecycle.
+ * Cached connection for serverless environments (Vercel) as well as traditional long-running Node processes.
  *
  * @returns {Promise<import('mongodb').Db>}
  */
 export const connectDB = async () => {
+  // Return existing database connection if already connected
   if (db) {
     return db;
+  }
+
+  // Prevent multiple concurrent connection attempts
+  if (connectionPromise) {
+    return connectionPromise;
   }
 
   const uri = process.env.MONGODB_URI;
@@ -25,16 +32,21 @@ export const connectDB = async () => {
     throw new Error('DB_NAME is not defined in environment variables.');
   }
 
-  try {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(dbName);
-    console.log(`Connected successfully to MongoDB database: "${dbName}"`);
-    return db;
-  } catch (error) {
-    console.error('Failed to connect to MongoDB:', error.message);
-    throw error;
-  }
+  connectionPromise = (async () => {
+    try {
+      client = new MongoClient(uri);
+      await client.connect();
+      db = client.db(dbName);
+      console.log(`Connected successfully to MongoDB database: "${dbName}"`);
+      return db;
+    } catch (error) {
+      connectionPromise = null; // reset promise on error
+      console.error('Failed to connect to MongoDB:', error.message);
+      throw error;
+    }
+  })();
+
+  return connectionPromise;
 };
 
 /**
