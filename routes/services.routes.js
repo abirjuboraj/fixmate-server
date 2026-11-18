@@ -27,6 +27,6 @@ router.patch("/:id", verifyToken, verifyTechnician, updateService);
 router.patch("/:id/availability", verifyToken, verifyTechnician, toggleAvailability);
 router.delete("/:id", verifyToken, verifyTechnician, deleteService);
 
-router.get("/:id", optionalAuth, getSingleService);
+router.get("/:id", getSingleService);
 
 export default router;

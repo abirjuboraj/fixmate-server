@@ -71,12 +71,9 @@ export const findAllUsers = async ({ search, role, category } = {}) => {
 export const findUserById = async (id) => {
   const objectId = toObjectId(id);
 
-  // Invalid id string (not a valid ObjectId) -> treat as "not found"
+
   if (!objectId) return null;
 
-  // NOTE: must be .findOne() (with await) — .find() returns a cursor object,
-  // which is always truthy and has no email property. That silently broke
-  // the "admin cannot change own role" check in the controller.
   return await usersCollection().findOne({ _id: objectId });
 };
 
@@ -92,5 +89,21 @@ export const updateUserRoleById = async (userId, newRole) => {
     { _id: objectId },
     { $set: { role: newRole, updatedAt: new Date() } },
     { returnDocument: "after" },
+  );
+};
+
+/**
+ * @param {{userId: string, {name?:string, bio?: string, phone?: string, image?: string, area?: string}}}
+ * @return {Promise<Array<object>>}
+ */
+
+export const updateUserProfileById = async (userId, updatedData) => {
+  const objectId = toObjectId(userId);
+  if (!objectId) return null;
+
+  return await usersCollection().findOneAndUpdate(
+    { _id: objectId },
+    { $set: updatedData },
+    { returnDocument: "after" }
   );
 };

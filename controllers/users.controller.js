@@ -1,6 +1,6 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
-import { findAllUsers, findUserById, updateUserRoleById } from "../models/users.model.js";
+import { findAllUsers, findUserById, updateUserRoleById, updateUserProfileById } from "../models/users.model.js";
 
 
 /**
@@ -61,3 +61,31 @@ export const updateUserRole = asyncHandler(async (req, res) => {
     data: updated,
   });
 });
+
+
+//update user profile
+
+export const updateUserProfile = asyncHandler(async(req, res)=>{
+  const userId = req.user._id;
+
+  const {name, image, bio, phone, area} = req.body;
+
+  const updatedData = {
+    name,
+    image,
+    bio,
+    area,
+    phone,
+    updatedAt: new Date(),
+  }
+
+  const updatedUser = await updateUserProfileById(userId,updatedData);
+
+  return res.status(200).json({
+    success: true,
+    message: 'User profile updated successfully',
+    data: updatedUser,
+  })
+
+
+})
