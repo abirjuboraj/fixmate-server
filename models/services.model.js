@@ -133,6 +133,57 @@ export const findPublicServices = async ({
 };
 
 /**
+ * Admin moderation list: ALL services from ALL technicians.
+ * @param {string} [status] - optional filter "pending" | "approved" | "rejected"
+ * @returns {Promise<Array<object>>}
+ */
+export const findAllServicesForAdmin = async (status) => {
+  const filter = {};
+
+  if (status && ["pending", "approved", "rejected"].includes(status)) {
+    filter.approvalStatus = status;
+  }
+
+  return await servicesCollection()
+    .aggregate([
+      { $match: filter },
+      {
+        // Compute a sort helper: pending = 0, everything else = 1,
+        // so a normal $sort can put pending rows first.
+        $addFields: {
+          __pendingFirst: {
+            $cond: [{ $eq: ["$approvalStatus", "pending"] }, 0, 1],
+          },
+        },
+      },
+      { $sort: { __pendingFirst: 1, createdAt: -1 } },
+      // Remove the helper field before sending the data to the client
+      { $unset: "__pendingFirst" },
+    ])
+    .toArray();
+};
+
+/**
+ * 
+ * @param {string} serviceId
+ * @param {string} newStatus - "approved" | "rejected"
+ * @returns {Promise<object|null>} The updated document, or null if not found
+ */
+export const updateApprovalStatusById = async (serviceId, newStatus) => {
+  const objectId = toObjectId(serviceId);
+
+  if (!objectId) {
+    return null;
+  }
+
+  return await servicesCollection().findOneAndUpdate(
+    { _id: objectId },
+    { $set: { approvalStatus: newStatus, updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
+};
+
+/**
  * @param {string} technicianEmail
  * @returns {Promise<Array<object>>}
  */

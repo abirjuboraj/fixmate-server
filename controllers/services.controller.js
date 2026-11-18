@@ -7,7 +7,8 @@ import {
   findServiceById,
   updateServiceById,
   updateAvailabilityById,
-  deleteServiceById
+  deleteServiceById,
+  findAllServicesForAdmin
 } from '../models/services.model.js';
 
 /**
@@ -21,6 +22,13 @@ const requireTechnicianIdentity = (req) => {
   }
 
   return { name: req.user.name || 'Technician', email: req.user.email };
+};
+const requireAdminIdentity = (req) => {
+  if (!req.user || !req.user.email) {
+    throw new ApiError(401, 'Unauthorized');
+  }
+
+  return { name: req.user.name || 'Admin', email: req.user.email };
 };
 
 
@@ -75,6 +83,22 @@ export const getAllServices = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     message: 'Services fetched successfully',
+    data: services
+  });
+});
+
+export const getAllServicesForAdmin = asyncHandler(async (req, res) => {
+  requireAdminIdentity(req);
+
+  const { status } = req.query;
+
+  const services = await findAllServicesForAdmin(
+    status ? String(status) : undefined
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: 'All services fetched successfully',
     data: services
   });
 });

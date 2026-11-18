@@ -69,8 +69,15 @@ export const findAllUsers = async ({ search, role, category } = {}) => {
 };
 
 export const findUserById = async (id) => {
-   const objectId = toObjectId(id);
-  return usersCollection().find({_id: objectId});
+  const objectId = toObjectId(id);
+
+  // Invalid id string (not a valid ObjectId) -> treat as "not found"
+  if (!objectId) return null;
+
+  // NOTE: must be .findOne() (with await) — .find() returns a cursor object,
+  // which is always truthy and has no email property. That silently broke
+  // the "admin cannot change own role" check in the controller.
+  return await usersCollection().findOne({ _id: objectId });
 };
 
 /**

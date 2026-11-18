@@ -3,6 +3,7 @@ import healthRoutes from './health.routes.js';
 import billingRoutes from './billing.routes.js';
 import servicesRoutes from './services.routes.js'
 import usersRoutes from './users.routes.js'
+import adminServicesRoutes from './admin-services.routes.js'
 
 const router = Router();
 
@@ -11,5 +12,6 @@ router.use('/health', healthRoutes);
 router.use('/services', servicesRoutes)
 router.use('/billing', billingRoutes);
 router.use('/admin/users', usersRoutes)
+router.use('/admin/services', adminServicesRoutes)
 
 export default router;
