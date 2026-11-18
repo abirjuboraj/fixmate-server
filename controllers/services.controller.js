@@ -8,8 +8,10 @@ import {
   updateServiceById,
   updateAvailabilityById,
   deleteServiceById,
-  findAllServicesForAdmin
+  findAllServicesForAdmin,
+  updateServiceStatusByAdmin
 } from '../models/services.model.js';
+import { ObjectId } from 'mongodb';
 
 /**
  *
@@ -87,6 +89,8 @@ export const getAllServices = asyncHandler(async (req, res) => {
   });
 });
 
+// admin only
+
 export const getAllServicesForAdmin = asyncHandler(async (req, res) => {
   requireAdminIdentity(req);
 
@@ -103,10 +107,22 @@ export const getAllServicesForAdmin = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * Controller to fetch the logged-in technician's own services (all approval states),
- * for the My Services dashboard.
- */
+export const updateServiceApproval = asyncHandler(async(req, res) => {
+  
+  const {id} = req.params;
+
+  const approvalStatus = req.body.approvalStatus;
+
+  const updated = await updateServiceStatusByAdmin(id, approvalStatus);
+
+   return res.status(200).json({
+    success: true,
+    message: `Service status updated to ${approvalStatus} successfully`,
+    data: updated
+  });
+})
+
+// technicians only
 export const getMyServices = asyncHandler(async (req, res) => {
   const technician = requireTechnicianIdentity(req);
 
@@ -147,10 +163,7 @@ export const getSingleService = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * Controller to update a service (owner technician only).
- * Any edit resets approvalStatus back to 'pending' for admin re-review.
- */
+//technicians only
 export const updateService = asyncHandler(async (req, res) => {
   const technician = requireTechnicianIdentity(req);
   const { id } = req.params;
@@ -175,7 +188,7 @@ export const updateService = asyncHandler(async (req, res) => {
   });
 });
 
-// toggle service availability
+// toggle service availability (technician only)
 
 export const toggleAvailability = asyncHandler(async (req, res) => {
   const technician = requireTechnicianIdentity(req);

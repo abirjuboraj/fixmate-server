@@ -18,11 +18,7 @@ const servicesCollection = () => {
   return getDB().collection("services");
 };
 
-/**
- * Converts an ID string to an ObjectId, or null when the string is not a
- * valid ObjectId. Callers treat null as "not found" instead of crashing
- * with a driver cast error (formal validation will be added later).
- */
+
 const toObjectId = (serviceId) => {
   try {
     return new ObjectId(serviceId);
@@ -40,9 +36,6 @@ const escapeRegex = (text) => {
 };
 
 /**
- * Builds a service document. Owner identity and moderation state are always
- * set server-side — the client payload never controls them. The payload is
- * stored as sent; field validation will be added later.
  * @param {object} payload - Fields coming from the frontend form
  * @param {{ name: string, email: string }} technician - From the auth middleware
  * @returns {object}
@@ -60,6 +53,8 @@ const buildServiceDocument = (payload, technician) => {
     updatedAt: now,
   };
 };
+
+//technician only
 
 /**
  * @param {object} payload - Service fields from the frontend
@@ -132,6 +127,7 @@ export const findPublicServices = async ({
   return await query.toArray();
 };
 
+//admin only
 /**
  * Admin moderation list: ALL services from ALL technicians.
  * @param {string} [status] - optional filter "pending" | "approved" | "rejected"
@@ -169,7 +165,7 @@ export const findAllServicesForAdmin = async (status) => {
  * @param {string} newStatus - "approved" | "rejected"
  * @returns {Promise<object|null>} The updated document, or null if not found
  */
-export const updateApprovalStatusById = async (serviceId, newStatus) => {
+export const updateServiceStatusByAdmin = async (serviceId, newStatus) => {
   const objectId = toObjectId(serviceId);
 
   if (!objectId) {
