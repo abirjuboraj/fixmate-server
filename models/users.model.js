@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
 
 const usersCollection = () => {
@@ -12,6 +13,14 @@ const escapeRegex = (text) => {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
+const toObjectId = (serviceId) => {
+  try {
+    return new ObjectId(serviceId);
+  } catch {
+    return null;
+  }
+};
+
 /**
  * @param {{ search?: string, role?: string, category?: string }} options
  * @returns {Promise<Array<object>>}
@@ -19,21 +28,18 @@ const escapeRegex = (text) => {
 export const findAllUsers = async ({ search, role, category } = {}) => {
   const filter = {};
 
-  // 1. Search by name or email
   if (search) {
     const rx = { $regex: escapeRegex(search), $options: "i" };
     filter.$or = [{ name: rx }, { email: rx }];
   }
 
-  // 2. Filter by role
   if (role && ["customer", "technician", "admin"].includes(role)) {
     filter.role = role;
   }
 
-  // 3. Filter technicians by the category of services they offer
   if (category) {
     const servicesCollection = getDB().collection("services");
-    // Step A: find services in this category, collect their technician emails
+
     const matchingServices = await servicesCollection
       .find({ category }, { projection: { technicianEmail: 1 } })
       .toArray();
@@ -42,7 +48,6 @@ export const findAllUsers = async ({ search, role, category } = {}) => {
       ...new Set(matchingServices.map((s) => s.technicianEmail)),
     ];
 
-    // Step B: keep only users who are one of those technicians
     filter.email = { $in: technicianEmails };
     filter.role = "technician";
   }
@@ -59,6 +64,26 @@ export const findAllUsers = async ({ search, role, category } = {}) => {
         createdAt: 1,
       },
     })
-    .sort({ createdAt: -1 }) // newest users first
+    .sort({ createdAt: -1 })
     .toArray();
+};
+
+export const findUserById = async (id) => {
+   const objectId = toObjectId(id);
+  return usersCollection().find({_id: objectId});
+};
+
+/**
+ * @param {{ userId: string, newRole: string }}
+ *
+ */
+export const updateUserRoleById = async (userId, newRole) => {
+  const objectId = toObjectId(userId);
+  if (!objectId) return null;
+
+  return await usersCollection().findOneAndUpdate(
+    { _id: objectId },
+    { $set: { role: newRole, updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
 };
