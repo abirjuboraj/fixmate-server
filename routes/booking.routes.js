@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyToken, verifyCustomer, verifyTechnician } from "../middlewares/auth.middleware.js";
-import { cancelBooking, createBooking, getMyBookings, getTechnicianBookings } from "../controllers/bookings.controller.js";
+import { cancelBooking, createBooking, getMyBookings, getTechnicianBookings, updateStatus } from "../controllers/bookings.controller.js";
 
 const router = Router();
 
@@ -12,10 +12,7 @@ router.patch('/:id/cancel', verifyToken, verifyCustomer, cancelBooking);
 
 router.get('/technician', verifyToken, verifyTechnician, getTechnicianBookings)
 
-
-
-//   PATCH /api/bookings/:id/cancel   (verifyToken, verifyCustomer)
-//   GET /api/bookings/technician     (verifyToken, verifyTechnician)
+router.patch('/:id/status', verifyToken, verifyTechnician, updateStatus)
 //   PATCH /api/bookings/:id/status   (verifyToken, verifyTechnician)
 //
 // NOTE: a bare GET "/" was removed on purpose — it had no middleware and

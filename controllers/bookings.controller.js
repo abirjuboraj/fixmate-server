@@ -8,6 +8,8 @@ import {
   cancelBookingByCustomer,
   findBookingByCustomer,
   findBookingsByTechnician,
+  updateBookingStatusByTechnician,
+  findBookingByTechnician,
 } from "../models/booking.model.js";
 
 /**
@@ -196,9 +198,76 @@ export const getTechnicianBookings = asyncHandler(async (req, res) => {
   });
 });
 
+// booking request status update (technician only)
+
+export const updateStatus = asyncHandler(async (req, res) => {
+  const bookingId = req.params.id;
+
+  const technician = requireTechnicianIdentity(req);
+
+  const { status, finalAmount } = req.body;
+
+  const booking = await findBookingByTechnician(bookingId, technician.email);
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: "Booking not found",
+    });
+  }
+
+  const allowedTransitions = {
+    requested: ["accepted", "rejected"],
+    accepted: ["in-progress"],
+    "in-progress": ["completed"],
+  };
+
+  if (!allowedTransitions[booking.status]?.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Cannot change booking status from ${booking.status} to ${status}`,
+    });
+  }
+
+  if (status === "completed") {
+    if (
+      typeof finalAmount !== "number" ||
+      !Number.isFinite(finalAmount) ||
+      finalAmount <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid final amount greater than 0 is required",
+      });
+    }
+  }
+
+  const updatedBooking = await updateBookingStatusByTechnician(
+    bookingId,
+    technician.email,
+    booking.status,
+    status,
+    status === "completed" ? finalAmount : undefined,
+  );
+
+  if (!updatedBooking) {
+    return res.status(409).json({
+      success: false,
+      message: "Booking status could not be updated. Please try again.",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Booking status updated successfully",
+    data: updatedBooking,
+  });
+});
+
 export default {
   createBooking,
   getMyBookings,
   cancelBooking,
   getTechnicianBookings,
+  updateStatus,
 };

@@ -86,10 +86,66 @@ export const cancelBookingByCustomer = async (bookingId, customerEmail) => {
  * @returns {Promise<Array<object>>}
  */
 
-export const findBookingsByTechnician = async(technicianEmail) => {
-  return await bookingsCollection().find(
-    {
+export const findBookingsByTechnician = async (technicianEmail) => {
+  return await bookingsCollection()
+    .find({
       technicianEmail,
-    }
-  ).sort({createdAt: -1}).toArray();
-}
+    })
+    .sort({ createdAt: -1 })
+    .toArray();
+};
+
+/**
+ *
+ * @param {string} bookingId
+ * @param {string} technicianEmail
+ * @return {Promise<Object | null>}
+ */
+
+export const findBookingByTechnician = async (bookingId, technicianEmail) => {
+  return await bookingsCollection().findOne({
+    _id: new ObjectId(bookingId),
+    technicianEmail,
+  });
+};
+
+/**
+ *
+ * @param {string} bookingId
+ * @param {string} technicianEmail
+ * @param {string} currentStatus
+ * @param {string} newStatus
+ * @param {number} finalAmount
+ * @return {Promise<object | null>}
+ */
+
+export const updateBookingStatusByTechnician = async (
+  bookingId,
+  technicianEmail,
+  currentStatus,
+  newStatus,
+  finalAmount,
+) => {
+  const updateFields = {
+    status: newStatus,
+    updateAt: new Date(),
+  };
+
+  if (newStatus === "completed") {
+    updateFields.finalAmount = finalAmount;
+  }
+
+  return bookingsCollection().findOneAndUpdate(
+    {
+      _id: new ObjectId(bookingId),
+      technicianEmail,
+      status: currentStatus,
+    },
+    {
+      $set: updateFields,
+    },
+    {
+      returnDocument: "after",
+    },
+  );
+};
