@@ -17,7 +17,7 @@ export const handleStripeWebhook = asyncHandler(async (req, res) => {
   // Construct and verify event using raw payload buffer
   const event = StripeService.constructWebhookEvent(req.body, signature);
 
-  // Process event in billing service
+  // Process event in payment service
   const result = await PaymentService.handleWebhookEvent(event);
 
   return res.status(200).json(result);

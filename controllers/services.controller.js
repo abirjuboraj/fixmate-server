@@ -12,6 +12,7 @@ import {
   updateServiceStatusByAdmin,
 } from "../models/services.model.js";
 import { ObjectId } from "mongodb";
+import { findUserByEmail } from "../models/users.model.js";
 
 /**
  *
@@ -152,10 +153,15 @@ export const getSingleService = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Service not found.");
   }
 
+  const technicianUser = await findUserByEmail(service.technicianEmail);
+
   return res.status(200).json({
     success: true,
     message: "Service fetched successfully",
-    data: service,
+    data: {
+      ...service,
+      technicianImage: technicianUser?.image ?? null,
+    },
   });
 });
 

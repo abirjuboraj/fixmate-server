@@ -21,24 +21,6 @@ const requireCustomerIdentity = (req) => {
   return { name: req.user.name || "Customer", email: req.user.email };
 };
 
-/**
- * -------------------------------------------------------------
- * 1. CREATE STRIPE CHECKOUT SESSION (One-time payment mode)
- * -------------------------------------------------------------
- * Route: POST /api/payment/create-checkout-session
- * Access: Customer only (verifyToken, verifyCustomer)
- *
- * TODO (you):
- * 1. Validate booking exists and belongs to the customer.
- * 2. Ensure booking.status === 'completed' and booking.paymentStatus === 'unpaid'.
- * 3. Call stripe.checkout.sessions.create with:
- *    - payment_method_types: ['card']
- *    - mode: 'payment'
- *    - line_items with finalAmount (converted to cents: Math.round(amount * 100))
- *    - success_url & cancel_url
- *    - metadata containing bookingId and customerEmail
- * 4. Return { url: session.url, sessionId: session.id } to frontend.
- */
 export const createCheckoutSession = asyncHandler(async (req, res) => {
   const customer = requireCustomerIdentity(req);
   const { bookingId } = req.body;
@@ -220,13 +202,7 @@ export const verifyCheckoutSession = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * -------------------------------------------------------------
- * 3. GET CUSTOMER PAYMENT HISTORY
- * -------------------------------------------------------------
- * Route: GET /api/payment/my-payments
- * Access: Customer only (verifyToken, verifyCustomer)
- */
+
 export const getMyPayments = asyncHandler(async (req, res) => {
   const customer = requireCustomerIdentity(req);
   const payments = await findPaymentsByCustomer(customer.email);

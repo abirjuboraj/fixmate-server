@@ -78,6 +78,20 @@ export const findUserById = async (id) => {
 };
 
 /**
+ *
+ * @param {string} email
+ * @returns {Promise<{ image?: string|null }|null>}
+ */
+export const findUserByEmail = async (email) => {
+  if (!email) return null;
+
+  return await usersCollection().findOne(
+    { email: String(email).trim() },
+    { projection: { image: 1 } }
+  );
+};
+
+/**
  * @param {{ userId: string, newRole: string }}
  *
  */

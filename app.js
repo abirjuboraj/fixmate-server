@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
 // 4. CRITICAL: Stripe Webhook Route BEFORE express.json()
 // Stripe signature verification requires the raw, unparsed request payload buffer.
 app.use(
-  '/api/v1/webhooks',
+  '/api/webhooks',
   express.raw({ type: 'application/json' }),
   webhookRoutes
 );
