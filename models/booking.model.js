@@ -80,3 +80,16 @@ export const cancelBookingByCustomer = async (bookingId, customerEmail) => {
     },
   );
 };
+
+/**
+ * @param {string} technicianEmail
+ * @returns {Promise<Array<object>>}
+ */
+
+export const findBookingsByTechnician = async(technicianEmail) => {
+  return await bookingsCollection().find(
+    {
+      technicianEmail,
+    }
+  ).sort({createdAt: -1}).toArray();
+}

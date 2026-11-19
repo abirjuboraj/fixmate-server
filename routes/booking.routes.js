@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { verifyToken, verifyCustomer } from "../middlewares/auth.middleware.js";
-import { cancelBooking, createBooking, getMyBookings } from "../controllers/bookings.controller.js";
+import { verifyToken, verifyCustomer, verifyTechnician } from "../middlewares/auth.middleware.js";
+import { cancelBooking, createBooking, getMyBookings, getTechnicianBookings } from "../controllers/bookings.controller.js";
 
 const router = Router();
 
@@ -8,7 +8,11 @@ router.post("/", verifyToken, verifyCustomer, createBooking);
 
 router.get("/own", verifyToken, verifyCustomer, getMyBookings);
 
-router.patch('/:id/cancel', verifyToken, verifyCustomer, cancelBooking)
+router.patch('/:id/cancel', verifyToken, verifyCustomer, cancelBooking);
+
+router.get('/technician', verifyToken, verifyTechnician, getTechnicianBookings)
+
+
 
 //   PATCH /api/bookings/:id/cancel   (verifyToken, verifyCustomer)
 //   GET /api/bookings/technician     (verifyToken, verifyTechnician)

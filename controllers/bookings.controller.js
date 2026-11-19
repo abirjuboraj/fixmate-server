@@ -7,6 +7,7 @@ import {
   findBookingsByCustomer,
   cancelBookingByCustomer,
   findBookingByCustomer,
+  findBookingsByTechnician,
 } from "../models/booking.model.js";
 
 /**
@@ -19,6 +20,19 @@ const requireCustomerIdentity = (req) => {
   }
 
   return { name: req.user.name || "Customer", email: req.user.email };
+};
+
+/**
+ *
+ * @param {import('express').Request} req
+ * @returns {{ name: string, email: string }}
+ */
+const requireTechnicianIdentity = (req) => {
+  if (!req.user || !req.user.email) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  return { name: req.user.name || "Technician", email: req.user.email };
 };
 
 const toDateString = (date) => {
@@ -168,8 +182,23 @@ export const cancelBooking = asyncHandler(async (req, res) => {
   });
 });
 
+// technician bookings get
+
+export const getTechnicianBookings = asyncHandler(async (req, res) => {
+  const technician = requireTechnicianIdentity(req);
+
+  const bookings = await findBookingsByTechnician(technician.email);
+
+  return res.status(200).json({
+    success: true,
+    message: "Technician bookings fetched successfully",
+    data: bookings,
+  });
+});
+
 export default {
   createBooking,
   getMyBookings,
   cancelBooking,
+  getTechnicianBookings,
 };
