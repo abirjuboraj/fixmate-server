@@ -4,10 +4,10 @@ import WebhookEventModel from '../models/webhook-event.model.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
- * Billing Service
+ * payment Service
  * Orchestrates business logic, server-side price validation, and database updates.
  */
-export const BillingService = {
+export const PaymentService = {
   /**
    * Initializes a checkout session after verifying items server-side.
    *
@@ -119,4 +119,4 @@ export const BillingService = {
   }
 };
 
-export default BillingService;
+export default PaymentService;

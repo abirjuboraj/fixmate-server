@@ -149,3 +149,23 @@ export const updateBookingStatusByTechnician = async (
     },
   );
 };
+
+/**
+ * Updates a booking's payment status to 'paid'.
+ * Called after successful Stripe checkout.
+ *
+ * @param {string} bookingId
+ * @returns {Promise<object|null>}
+ */
+export const markBookingAsPaid = async (bookingId) => {
+  return await bookingsCollection().findOneAndUpdate(
+    { _id: new ObjectId(bookingId) },
+    {
+      $set: {
+        paymentStatus: "paid",
+        updatedAt: new Date(),
+      },
+    },
+    { returnDocument: "after" }
+  );
+};

@@ -1,6 +1,6 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import StripeService from '../services/stripe.service.js';
-import BillingService from '../services/billing.service.js';
+import PaymentService from '../services/payment.service.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -18,7 +18,7 @@ export const handleStripeWebhook = asyncHandler(async (req, res) => {
   const event = StripeService.constructWebhookEvent(req.body, signature);
 
   // Process event in billing service
-  const result = await BillingService.handleWebhookEvent(event);
+  const result = await PaymentService.handleWebhookEvent(event);
 
   return res.status(200).json(result);
 });
