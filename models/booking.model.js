@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
 
 const bookingsCollection = () => {
@@ -7,7 +8,7 @@ const bookingsCollection = () => {
 /**
  *
  * @param {object} doc
- * @returns {Promise<object>} 
+ * @returns {Promise<object>}
  */
 export const insertBooking = async (doc) => {
   const result = await bookingsCollection().insertOne(doc);
@@ -19,8 +20,6 @@ export const insertBooking = async (doc) => {
 };
 
 /**
- * Business rule: a customer cannot have two ACTIVE requests for the same
- * service at the same time. "Active" = requested, accepted or in-progress.
  *
  * @param {string} serviceId - service._id as string
  * @param {string} customerEmail - logged-in customer's email
@@ -35,23 +34,49 @@ export const findActiveBooking = async (serviceId, customerEmail) => {
 };
 
 /**
- * TODO (you): GET /api/bookings/my — all bookings of the logged-in customer,
- * newest first, for the My Bookings dashboard page.
- *
- * When you implement it, replace the empty return below with:
- *
- *   return await bookingsCollection()
- *     .find({ customerEmail })
- *     .sort({ createdAt: -1 })
- *     .toArray();
- *
- * The controller (getMyBookings) and the frontend fetch handler
- * (lib/api/bookings.ts -> getMyBookings) are already wired up.
- *
  * @param {string} customerEmail
  * @returns {Promise<Array<object>>}
  */
 export const findBookingsByCustomer = async (customerEmail) => {
-  // TODO (you): implement the query shown above.
-  return [];
+  return await bookingsCollection()
+    .find({ customerEmail })
+    .sort({ createdAt: -1 })
+    .toArray();
+};
+
+/**
+ * @param {string} bookingId
+ * @param {string} customerEmail
+ * @returns {Promise<object|null>}
+ */
+export const findBookingByCustomer = async (bookingId, customerEmail) => {
+  return bookingsCollection().findOne({
+    _id: new ObjectId(bookingId),
+    customerEmail,
+  });
+};
+
+/**
+ *
+ * @param {string} bookingId
+ * @param {string} customerEmail
+ */
+
+export const cancelBookingByCustomer = async (bookingId, customerEmail) => {
+  return await bookingsCollection().updateOne(
+    {
+      _id: new ObjectId(bookingId),
+      customerEmail,
+      status: "requested",
+    },
+    {
+      $set: {
+        status: "cancelled",
+        updatedAt: new Date(),
+      },
+    },
+    {
+      returnDocument: "after",
+    },
+  );
 };

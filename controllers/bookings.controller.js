@@ -5,6 +5,8 @@ import {
   insertBooking,
   findActiveBooking,
   findBookingsByCustomer,
+  cancelBookingByCustomer,
+  findBookingByCustomer,
 } from "../models/booking.model.js";
 
 /**
@@ -26,11 +28,18 @@ const toDateString = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+//customer booking create api
+
 export const createBooking = asyncHandler(async (req, res) => {
   const customer = requireCustomerIdentity(req);
 
-  const { serviceId, customerPhone, address, preferredDate, problemDescription } =
-    req.body;
+  const {
+    serviceId,
+    customerPhone,
+    address,
+    preferredDate,
+    problemDescription,
+  } = req.body;
 
   if (!serviceId) {
     throw new ApiError(400, "serviceId is required.");
@@ -39,7 +48,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (!customerPhone || !address || !preferredDate || !problemDescription) {
     throw new ApiError(
       400,
-      "Phone, address, preferred date and problem description are all required."
+      "Phone, address, preferred date and problem description are all required.",
     );
   }
 
@@ -48,7 +57,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (description.length < 20) {
     throw new ApiError(
       400,
-      "Problem description must be at least 20 characters."
+      "Problem description must be at least 20 characters.",
     );
   }
 
@@ -77,14 +86,13 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (existingActive) {
     throw new ApiError(
       409,
-      "You already have an active request for this service."
+      "You already have an active request for this service.",
     );
   }
 
   const now = new Date();
 
   const booking = {
-    
     serviceId: String(service._id),
     serviceTitle: service.title,
     serviceImage: service.image,
@@ -92,7 +100,6 @@ export const createBooking = asyncHandler(async (req, res) => {
     basePrice: service.basePrice,
     technicianName: service.technicianName,
     technicianEmail: service.technicianEmail,
-
 
     customerName: customer.name,
     customerEmail: customer.email,
@@ -102,7 +109,7 @@ export const createBooking = asyncHandler(async (req, res) => {
     problemDescription: description,
 
     status: "requested",
-    finalAmount: service.basePrice, 
+    finalAmount: service.basePrice,
     paymentStatus: "unpaid",
 
     createdAt: now,
@@ -118,33 +125,51 @@ export const createBooking = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * TODO (you): GET /api/bookings/my — the logged-in customer's bookings,
- * for the My Bookings dashboard page.
- *
- * Steps to implement (the model helper is stubbed in models/booking.model.js):
- *   1. const customer = requireCustomerIdentity(req);   // email from req.user
- *   2. const bookings = await findBookingsByCustomer(customer.email);
- *   3. return res.status(200).json({
- *        success: true,
- *        message: 'Your bookings fetched successfully',
- *        data: bookings,
- *      });
- *
- * The route (booking.routes.js) and the frontend fetch handler
- * (lib/api/bookings.ts -> getMyBookings) are already wired — until you
- * finish this, the My Bookings page will simply show its empty state.
- */
+// customer get bookings api
 export const getMyBookings = asyncHandler(async (req, res) => {
-  // TODO (you): implement the 3 steps shown above.
+  const customer = requireCustomerIdentity(req);
+  const bookings = await findBookingsByCustomer(customer.email);
+
   return res.status(200).json({
     success: true,
-    message: "Bookings API not implemented yet.",
-    data: [],
+    message: "Your bookings fetched successfully",
+    data: bookings,
+  });
+});
+
+// customer booking cancel
+export const cancelBooking = asyncHandler(async (req, res) => {
+  const customer = requireCustomerIdentity(req);
+
+  const bookingId = req.params.id;
+
+  const booking = await findBookingByCustomer(bookingId, customer.email);
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: "Booking not found",
+    });
+  }
+
+  if (booking.status !== "requested") {
+    return res.status(400).json({
+      success: false,
+      message: "Only requested bookings can be cancelled",
+    });
+  }
+
+  const cancelled = await cancelBookingByCustomer(booking._id, customer.email);
+
+  return res.status(200).json({
+    success: true,
+    message: "Your booking has been cancelled",
+    data: cancelled,
   });
 });
 
 export default {
   createBooking,
   getMyBookings,
+  cancelBooking,
 };
