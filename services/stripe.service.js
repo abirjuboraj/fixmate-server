@@ -1,5 +1,4 @@
 import { getStripeInstance } from '../config/stripe.js';
-import ApiError from '../utils/ApiError.js';
 
 /**
  * Stripe Service
@@ -39,28 +38,6 @@ export const StripeService = {
     });
 
     return session;
-  },
-
-  /**
-   * Verifies and constructs a webhook event from the raw payload and signature header.
-   *
-   * @param {Buffer} rawPayload - Unparsed raw body buffer
-   * @param {string} signature - Stripe-Signature header value
-   * @returns {import('stripe').Stripe.Event}
-   */
-  constructWebhookEvent(rawPayload, signature) {
-    const stripe = getStripeInstance();
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    if (!webhookSecret) {
-      throw new ApiError(500, 'STRIPE_WEBHOOK_SECRET is not configured on the server.');
-    }
-
-    try {
-      return stripe.webhooks.constructEvent(rawPayload, signature, webhookSecret);
-    } catch (err) {
-      throw new ApiError(400, `Webhook signature verification failed: ${err.message}`);
-    }
   }
 };
 

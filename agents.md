@@ -1,7 +1,7 @@
 # Project Development & Architecture Documentation (`agents.md`)
 
 ## 1. Project Overview
-This repository contains a modular, production-ready, reusable backend starter template designed for Express.js full-stack assignments. It adheres to an MVC architecture enhanced with a Service Layer, uses native ES modules (`import`/`export`), integrates the official MongoDB Native Driver (`MongoClient`), and provides a decoupled Stripe payment and webhook processing foundation.
+This repository contains a modular, production-ready, reusable backend starter template designed for Express.js full-stack assignments. It adheres to an MVC architecture enhanced with a Service Layer, uses native ES modules (`import`/`export`), integrates the official MongoDB Native Driver (`MongoClient`), and provides a decoupled Stripe payment foundation (payments are verified directly via the Stripe API — no webhook processing).
 
 ---
 
@@ -16,16 +16,16 @@ assignment_9-server/
 │   ├── index.routes.js         # Central API route aggregator (/api/v1)
 │   ├── health.routes.js        # Health status check route (/api/v1/health)
 │   ├── billing.routes.js       # Billing routes (/api/v1/billing)
-│   └── webhook.routes.js       # Webhook routes (/api/v1/webhooks)
 ├── controllers/
 │   ├── billing.controller.js   # HTTP controller for checkout sessions
-│   └── webhook.controller.js   # HTTP controller for Stripe webhooks
 ├── services/
 │   ├── billing.service.js      # Business logic: line item formatting, idempotency, updates
-│   └── stripe.service.js       # Direct Stripe API calls & signature verification
+│   └── stripe.service.js       # Direct Stripe API calls (checkout session creation)
 ├── models/
-│   ├── subscription.model.js   # MongoDB queries for customer subscriptions & payments
-│   └── webhook-event.model.js  # MongoDB queries for webhook event idempotency
+│   ├── users.model.js         # MongoDB queries for user accounts
+│   ├── services.model.js      # MongoDB queries for service listings
+│   ├── booking.model.js       # MongoDB queries for repair bookings
+│   └── payment.model.js       # MongoDB queries for payment records
 ├── middlewares/
 │   ├── auth.middleware.js      # Bearer token authentication middleware placeholder
 │   ├── error.middleware.js     # Centralized error handler returning standardized JSON
@@ -36,7 +36,7 @@ assignment_9-server/
 ├── utils/
 │   ├── ApiError.js             # Standardized operational error class
 │   └── asyncHandler.js         # Promise rejection forwarder for Express controllers
-├── app.js                      # Express application setup, CORS, raw & json middlewares
+├── app.js                      # Express application setup, CORS & json middlewares
 ├── server.js                   # Startup entrypoint: connects DB before listening on PORT
 ├── .env                        # Local environment variables (gitignored)
 ├── .env.example                # Template for required environment variables
@@ -76,37 +76,31 @@ assignment_9-server/
   - Reusable placeholder to inspect Bearer tokens in incoming headers, ready for JWT or session verification logic when requirements are provided.
 
 ### Models Layer (`models/`)
-- **`models/subscription.model.js`**:
-  - Direct MongoDB Native Driver operations against the `subscriptions` collection.
-  - Implements `findByCustomerId`, `findBySubscriptionId`, `upsert`, and `updateStatus`.
-- **`models/webhook-event.model.js`**:
-  - Encapsulates idempotency operations for the `webhook_events` collection.
-  - Implements atomic insertion (`recordIfNew`) to prevent duplicate event executions when Stripe retries webhooks.
+- **`models/users.model.js`**: User account queries (lookup, role updates).
+- **`models/services.model.js`**: Service listing queries (public search, approval status).
+- **`models/booking.model.js`**: Repair booking queries (create, filter by customer/technician/admin, status updates).
+- **`models/payment.model.js`**: Payment record queries (insert, lookup by Stripe session id, lists).
 
 ### Services Layer (`services/`)
 - **`services/stripe.service.js`**:
-  - Wraps Stripe SDK operations (`checkout.sessions.create` and `webhooks.constructEvent`).
-- **`services/billing.service.js`**:
-  - Handles billing business logic.
+  - Wraps Stripe SDK operations (`checkout.sessions.create`).
+- **`services/payment.service.js`**:
+  - Handles payment business logic.
   - Validates line items server-side to prevent trusting client-supplied prices or statuses.
-  - Orchestrates checkout session creation and responds to Stripe webhook events (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`).
+  - Orchestrates checkout session creation. Payment status is verified directly against the Stripe API (`checkout.sessions.retrieve`) — no webhook processing.
 
 ### Controllers Layer (`controllers/`)
 - **`controllers/billing.controller.js`**:
   - Extracts parameters from `req.body`, invokes `BillingService.createCheckoutSession`, and returns a standardized response.
-- **`controllers/webhook.controller.js`**:
-  - Validates `stripe-signature` header and delegates raw buffer processing to `StripeService` and `BillingService`.
 
 ### Routes Layer (`routes/`)
 - **`routes/health.routes.js`**: `GET /api/v1/health` for monitoring server availability.
 - **`routes/billing.routes.js`**: `POST /api/v1/billing/create-checkout-session`.
-- **`routes/webhook.routes.js`**: `POST /api/v1/webhooks/stripe`.
 - **`routes/index.routes.js`**: Central router mounting all standard JSON API routes under `/api/v1`.
 
 ### Application & Server Layer (`app.js` & `server.js`)
 - **`app.js`**:
   - Mounts CORS with configurable origins (`CLIENT_ORIGIN`).
-  - **CRITICAL**: Mounts `/api/v1/webhooks` with `express.raw({ type: 'application/json' })` **before** registering global `express.json()`.
   - Mounts routes, 404 handler, and error middleware.
 - **`server.js`**:
   - Bootstraps environment variables via `import 'dotenv/config'`.
@@ -130,7 +124,6 @@ assignment_9-server/
    DB_NAME=starter_db
    CLIENT_ORIGIN=http://localhost:3000
    STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
    CLIENT_SUCCESS_URL=http://localhost:3000/payment/success
    CLIENT_CANCEL_URL=http://localhost:3000/payment/cancel
    ```

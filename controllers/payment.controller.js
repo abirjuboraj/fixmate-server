@@ -9,6 +9,8 @@ import {
   insertPayment,
   findPaymentBySessionId,
   findPaymentsByCustomer,
+  getAllTransactions,
+  getTotalRevenue,
 } from "../models/payment.model.js";
 
 /**
@@ -40,7 +42,7 @@ export const createCheckoutSession = asyncHandler(async (req, res) => {
   if (booking.status !== "completed") {
     throw new ApiError(
       400,
-      `Cannot pay for a booking that is currently "${booking.status}". Only completed jobs can be paid.`
+      `Cannot pay for a booking that is currently "${booking.status}". Only completed jobs can be paid.`,
     );
   }
 
@@ -51,9 +53,7 @@ export const createCheckoutSession = asyncHandler(async (req, res) => {
 
   // 4. Calculate amount in cents (USD)
   const amountToCharge =
-    booking.finalAmount !== undefined
-      ? booking.finalAmount
-      : booking.basePrice;
+    booking.finalAmount !== undefined ? booking.finalAmount : booking.basePrice;
 
   if (!amountToCharge || amountToCharge <= 0) {
     throw new ApiError(400, "Invalid payable amount for this booking.");
@@ -63,8 +63,7 @@ export const createCheckoutSession = asyncHandler(async (req, res) => {
 
   // 5. Build return URLs
   const clientBase =
-    process.env.CLIENT_ORIGIN?.split(",")[0]?.trim() ||
-    "http://localhost:3000";
+    process.env.CLIENT_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
 
   const successUrl = `${clientBase}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${clientBase}/payment/cancel?booking_id=${bookingId}`;
@@ -111,7 +110,6 @@ export const createCheckoutSession = asyncHandler(async (req, res) => {
     },
   });
 });
-
 
 export const verifyCheckoutSession = asyncHandler(async (req, res) => {
   const customer = requireCustomerIdentity(req);
@@ -202,7 +200,6 @@ export const verifyCheckoutSession = asyncHandler(async (req, res) => {
   });
 });
 
-
 export const getMyPayments = asyncHandler(async (req, res) => {
   const customer = requireCustomerIdentity(req);
   const payments = await findPaymentsByCustomer(customer.email);
@@ -211,6 +208,22 @@ export const getMyPayments = asyncHandler(async (req, res) => {
     success: true,
     message: "Payment history fetched successfully.",
     data: payments,
+  });
+});
+
+export const getTransactionsForAdmin = asyncHandler(async (req, res) => {
+  const [transactions, totalRevenue] = await Promise.all([
+    getAllTransactions(),
+    getTotalRevenue(),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Transactions fetched successfully",
+    data: {
+      transactions,
+      totalRevenue,
+    },
   });
 });
 

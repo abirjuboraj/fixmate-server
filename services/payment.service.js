@@ -1,6 +1,4 @@
 import StripeService from './stripe.service.js';
-import SubscriptionModel from '../models/subscription.model.js';
-import WebhookEventModel from '../models/webhook-event.model.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -54,68 +52,6 @@ export const PaymentService = {
       sessionId: session.id,
       url: session.url
     };
-  },
-
-  /**
-   * Handles verified Stripe webhook events with idempotency check.
-   *
-   * @param {import('stripe').Stripe.Event} event
-   */
-  async handleWebhookEvent(event) {
-    const { id: eventId, type, data } = event;
-
-    // Idempotency check: record event atomically. If already exists, return early.
-    const isNew = await WebhookEventModel.recordIfNew(eventId, type, data.object);
-    if (!isNew) {
-      console.log(`[Webhook] Event ${eventId} (${type}) was already processed. Skipping duplicate.`);
-      return { received: true, duplicate: true };
-    }
-
-    try {
-      switch (type) {
-        case 'checkout.session.completed': {
-          const session = data.object;
-          await SubscriptionModel.upsert(
-            { customerId: session.customer || session.customer_email },
-            {
-              stripeSessionId: session.id,
-              stripeCustomerId: session.customer,
-              stripeSubscriptionId: session.subscription,
-              status: session.payment_status || 'completed',
-              customerEmail: session.customer_details?.email || session.customer_email,
-              amountTotal: session.amount_total,
-              currency: session.currency,
-              mode: session.mode
-            }
-          );
-          break;
-        }
-
-        case 'customer.subscription.updated':
-        case 'customer.subscription.deleted': {
-          const subscription = data.object;
-          await SubscriptionModel.updateStatus(
-            { stripeSubscriptionId: subscription.id },
-            subscription.status,
-            {
-              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-              cancelAtPeriodEnd: subscription.cancel_at_period_end
-            }
-          );
-          break;
-        }
-
-        default:
-          // Unhandled event type acknowledged safely
-          break;
-      }
-
-      await WebhookEventModel.markStatus(eventId, 'completed');
-      return { received: true };
-    } catch (error) {
-      await WebhookEventModel.markStatus(eventId, 'failed', error.message);
-      throw error;
-    }
   }
 };
 

@@ -42,16 +42,32 @@ export const findPaymentsByCustomer = async (customerEmail) => {
 /**
  * Finds all payments for admin oversight.
  */
-export const findAllPayments = async () => {
+export const getAllTransactions = async () => {
   return await paymentsCollection()
     .find({})
     .sort({ paidAt: -1 })
     .toArray();
 };
 
+// calculate total revenue for admin panel
+export const getTotalRevenue = async() => {
+  const result = await paymentsCollection().aggregate([
+    {
+      $group: {
+        _id: null,
+        totalRevenue: {
+          $sum: "$amount",
+        },
+      },
+    },
+  ]).toArray();
+
+  return result[0]?.totalRevenue || 0;
+}
+
 export default {
   insertPayment,
   findPaymentBySessionId,
   findPaymentsByCustomer,
-  findAllPayments,
+  getAllTransactions,
 };

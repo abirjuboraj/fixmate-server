@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { connectDB } from './config/db.js';
 import routes from './routes/index.routes.js';
-import webhookRoutes from './routes/webhook.routes.js';
 import errorMiddleware from './middlewares/error.middleware.js';
 import notFoundMiddleware from './middlewares/not-found.middleware.js';
 
@@ -46,25 +45,17 @@ app.get('/', (req, res) => {
   });
 });
 
-// 4. CRITICAL: Stripe Webhook Route BEFORE express.json()
-// Stripe signature verification requires the raw, unparsed request payload buffer.
-app.use(
-  '/api/webhooks',
-  express.raw({ type: 'application/json' }),
-  webhookRoutes
-);
-
-// 5. Global Body Parser for all remaining JSON routes
+// 4. Global Body Parser for all JSON routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 6. API Routes
+// 5. API Routes
 app.use('/api', routes);
 
-// 7. 404 Not Found Middleware (catches unmatched routes)
+// 6. 404 Not Found Middleware (catches unmatched routes)
 app.use(notFoundMiddleware);
 
-// 8. Centralized Error Handling Middleware
+// 7. Centralized Error Handling Middleware
 app.use(errorMiddleware);
 
 export default app;
