@@ -6,6 +6,7 @@ import usersRoutes from './users.routes.js'
 import userProfileRoute from './user-profile.routes.js'
 import adminServicesRoutes from './admin-services.routes.js'
 import bookingsRoutes from './booking.routes.js'
+import adminBookingRoutes from './admin-booking.routes.js'
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use('/payment', PaymentRoutes);
 router.use('/user', userProfileRoute)
 router.use('/admin/users', usersRoutes)
 router.use('/admin/services', adminServicesRoutes)
+router.use('/admin/bookings', adminBookingRoutes)
 router.use('/bookings', bookingsRoutes)
 
 

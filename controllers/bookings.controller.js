@@ -10,6 +10,7 @@ import {
   findBookingsByTechnician,
   updateBookingStatusByTechnician,
   findBookingByTechnician,
+  getAllBookings,
 } from "../models/booking.model.js";
 
 /**
@@ -35,6 +36,18 @@ const requireTechnicianIdentity = (req) => {
   }
 
   return { name: req.user.name || "Technician", email: req.user.email };
+};
+/**
+ *
+ * @param {import('express').Request} req
+ * @returns {{ name: string, email: string }}
+ */
+const requireAdminIdentity = (req) => {
+  if (!req.user || !req.user.email) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  return { name: req.user.name || "Admin", email: req.user.email };
 };
 
 const toDateString = (date) => {
@@ -264,10 +277,32 @@ export const updateStatus = asyncHandler(async (req, res) => {
   });
 });
 
+
+// admin all bookings get
+
+export const getAllBookingsForAdmin = asyncHandler(async(req, res)=> {
+   const {status} = req.query;
+
+   const filter = {}
+
+   if(status && status !== "all")
+    filter.status = status;
+
+
+   const bookings = await getAllBookings(filter);
+
+   return res.status(200).json({
+    success: true,
+    message: "All bookings fetched successfully",
+    data: bookings,
+   })
+})
+
 export default {
   createBooking,
   getMyBookings,
   cancelBooking,
   getTechnicianBookings,
   updateStatus,
+  getAllBookingsForAdmin,
 };

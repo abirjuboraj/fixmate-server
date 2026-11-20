@@ -166,6 +166,20 @@ export const markBookingAsPaid = async (bookingId) => {
         updatedAt: new Date(),
       },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
+};
+
+// admin all bookings get
+
+/**
+ * @param {string} query
+ * @return {Promise<Array<object>>}
+ */
+
+export const getAllBookings = async (query) => {
+  return await bookingsCollection()
+    .find(query)
+    .sort({ createdAt: -1 })
+    .toArray();
 };
