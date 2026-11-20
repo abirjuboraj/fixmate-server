@@ -11,9 +11,15 @@ let connectionPromise = null;
  * @returns {Promise<import('mongodb').Db>}
  */
 export const connectDB = async () => {
-  // Return existing database connection if already connected
-  if (db) {
+  // Return existing database connection if already connected and healthy
+  if (db && client && !client.topology?.isClosed()) {
     return db;
+  }
+
+  // If client was previously closed or invalid, reset cache to reconnect cleanly
+  if (client && client.topology?.isClosed()) {
+    db = null;
+    connectionPromise = null;
   }
 
   // Prevent multiple concurrent connection attempts
