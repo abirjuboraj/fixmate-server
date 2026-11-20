@@ -73,8 +73,6 @@ export const insertService = async (payload, technician) => {
 };
 
 /**
- * Public browse query: only approved + available services, with server-side
- * search (title or category), filters (category, serviceMode) and sorting.
  * @param {{ search?: string, category?: string, serviceMode?: string, sort?: string, limit?: number }} options
  * @returns {Promise<Array<object>>}
  */

@@ -66,12 +66,7 @@ export const addService = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * Controller to browse services (Public).
- * Only approvalStatus 'approved' and isAvailable true are returned.
- * Server-side search (title/category), filters (category, serviceMode)
- * and sorting (price-asc, price-desc, newest) via query params.
- */
+
 export const getAllServices = asyncHandler(async (req, res) => {
   const { search, category, serviceMode, sort, limit } = req.query;
 
