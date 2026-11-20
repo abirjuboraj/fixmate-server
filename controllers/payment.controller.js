@@ -231,4 +231,5 @@ export default {
   createCheckoutSession,
   verifyCheckoutSession,
   getMyPayments,
+  getTransactionsForAdmin,
 };
