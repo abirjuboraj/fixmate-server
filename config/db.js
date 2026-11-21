@@ -11,8 +11,13 @@ let connectionPromise = null;
  * @returns {Promise<import('mongodb').Db>}
  */
 export const connectDB = async () => {
-  // Return existing database connection if already connected
+  // Already connected? Reuse it. If the driver closed the topology after a
+  // failed connection (v7 does this on any connect error), reconnect the SAME
+  // client so the cached `db` reference stays valid for every model.
   if (db) {
+    const topology = client?.topology;
+    if (!topology || topology.isConnected()) return db;
+    await client.connect();
     return db;
   }
 
@@ -34,7 +39,13 @@ export const connectDB = async () => {
 
   connectionPromise = (async () => {
     try {
-      client = new MongoClient(uri);
+      // Small pool per serverless instance: many warm instances × a large
+      // default pool (100) can exhaust a shared Atlas cluster's connections.
+      client = new MongoClient(uri, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        retryWrites: true,
+      });
       await client.connect();
       db = client.db(dbName);
       console.log(`Connected successfully to MongoDB database: "${dbName}"`);
